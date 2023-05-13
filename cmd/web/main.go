@@ -65,16 +65,10 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	fileServer := http.FileServer(http.Dir("./ui/static/"))
-	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
-	mux.HandleFunc("/", app.home)
-	mux.HandleFunc("/snippet/view", app.snippetView)
-	mux.HandleFunc("/snippet/create", app.snippetCreate)
-
 	srv := &http.Server{
 		Addr:     ":" + strconv.FormatUint(cfg.addr, 10),
 		ErrorLog: app.ErrorLog,
-		Handler:  mux,
+		Handler:  app.routes(mux),
 	}
 
 	app.InfoLog.Printf("Starting server on http://localhost:%d", cfg.addr)
