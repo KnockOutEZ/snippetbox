@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+
+	conf "github.com/nexentra/snippetbox/configs"
 )
 
 type config struct {
@@ -14,28 +16,24 @@ type config struct {
 	logToFile bool
 }
 
-var (
-	InfoLog  *log.Logger
-	ErrorLog *log.Logger
-)
+type Logger conf.Logger
 
 func main() {
 	var cfg config
+	var errorLog *log.Logger
+	var infoLog *log.Logger
 
 	flag.Uint64Var(&cfg.addr, "addr", 4000, "HTTP network address")
 	flag.StringVar(&cfg.staticDir, "static-dir", "./ui/static", "Path to static assets")
 	flag.BoolVar(&cfg.logToFile, "log", false, "Enable logging")
 	flag.Parse()
 
-	InfoLog = log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
-	ErrorLog = log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
-
 	if cfg.logToFile {
 		infoFile, err := os.OpenFile("tmp/info.log", os.O_RDWR|os.O_CREATE, 0666)
 		if err != nil {
 			log.Fatal(err)
 		}
-		
+
 		err = infoFile.Truncate(0)
 		if err != nil {
 			log.Fatal(err)
@@ -53,26 +51,33 @@ func main() {
 
 		defer infoFile.Close()
 		defer errFile.Close()
-		InfoLog = log.New(infoFile, "INFO\t", log.Ldate|log.Ltime)
-		ErrorLog = log.New(errFile, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
+		infoLog = log.New(infoFile, "INFO\t", log.Ldate|log.Ltime)
+		errorLog = log.New(errFile, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
+	} else {
+		infoLog = log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
+		errorLog = log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
+	}
+
+	app := &Logger{
+		ErrorLog: errorLog,
+		InfoLog:  infoLog,
 	}
 
 	mux := http.NewServeMux()
 
 	fileServer := http.FileServer(http.Dir("./ui/static/"))
-
 	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
-	mux.HandleFunc("/", home)
-	mux.HandleFunc("/snippet/view", snippetView)
-	mux.HandleFunc("/snippet/create", snippetCreate)
+	mux.HandleFunc("/", app.home)
+	mux.HandleFunc("/snippet/view", app.snippetView)
+	mux.HandleFunc("/snippet/create", app.snippetCreate)
 
 	srv := &http.Server{
 		Addr:     ":" + strconv.FormatUint(cfg.addr, 10),
-		ErrorLog: ErrorLog,
+		ErrorLog: app.ErrorLog,
 		Handler:  mux,
 	}
 
-	InfoLog.Printf("Starting server on http://localhost:%d", cfg.addr)
+	app.InfoLog.Printf("Starting server on http://localhost:%d", cfg.addr)
 	err := srv.ListenAndServe()
-	ErrorLog.Fatal(err)
+	app.ErrorLog.Fatal(err)
 }
