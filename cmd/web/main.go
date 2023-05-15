@@ -1,13 +1,16 @@
 package main
 
 import (
+	"database/sql"
 	"flag"
 	"log"
 	"net/http"
 	"os"
 	"strconv"
 
+	_ "github.com/lib/pq"
 	conf "github.com/nexentra/snippetbox/configs"
+	"github.com/nexentra/snippetbox/internal/models"
 )
 
 type config struct {
@@ -16,12 +19,14 @@ type config struct {
 	logToFile bool
 }
 
-type Logger conf.Logger
+type Application conf.Application
 
 func main() {
 	var cfg config
 	var errorLog *log.Logger
 	var infoLog *log.Logger
+
+	dsn := flag.String("dsn", "postgres://postgres:mysecretpassword@localhost:5433/snippetbox?sslmode=disable", "Postgres data source name")
 
 	flag.Uint64Var(&cfg.addr, "addr", 4000, "HTTP network address")
 	flag.StringVar(&cfg.staticDir, "static-dir", "./ui/static", "Path to static assets")
@@ -58,9 +63,16 @@ func main() {
 		errorLog = log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 	}
 
-	app := &Logger{
+	db, err := openDB(*dsn)
+	if err != nil {
+		errorLog.Fatal(err)
+	}
+	defer db.Close()
+
+	app := &Application{
 		ErrorLog: errorLog,
 		InfoLog:  infoLog,
+		Snippets: &models.SnippetModel{DB: db},
 	}
 
 	mux := http.NewServeMux()
@@ -72,6 +84,17 @@ func main() {
 	}
 
 	app.InfoLog.Printf("Starting server on http://localhost:%d", cfg.addr)
-	err := srv.ListenAndServe()
+	err = srv.ListenAndServe()
 	app.ErrorLog.Fatal(err)
+}
+
+func openDB(dsn string) (*sql.DB, error) {
+	db, err := sql.Open("postgres", dsn)
+	if err != nil {
+		return nil, err
+	}
+	if err = db.Ping(); err != nil {
+		return nil, err
+	}
+	return db, nil
 }

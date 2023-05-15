@@ -7,7 +7,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: mysecretpassword
-      POSTGRES_DB: mydb
+      POSTGRES_DB: snippetbox
     ports:
       - "5433:5432"
     volumes:
@@ -24,7 +24,7 @@ services:
       DB_PORT: 5432
       DB_USER: postgres
       DB_PASSWORD: mysecretpassword
-      DB_NAME: mydb
+      DB_NAME: snippetbox
 
 volumes:
   postgres_data:

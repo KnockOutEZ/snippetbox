@@ -1,10 +1,15 @@
 package configs
 
-import "log"
+import (
+	"log"
 
-type Logger struct {
+	"github.com/nexentra/snippetbox/internal/models"
+)
+
+type Application struct {
 	ErrorLog *log.Logger
 	InfoLog  *log.Logger
+	Snippets *models.SnippetModel
 }
 
 // func SetLogger(logger *Logger) {
