@@ -2,7 +2,7 @@ package main
 
 import "net/http"
 
-func (app *Logger) routes(mux *http.ServeMux) *http.ServeMux {
+func (app *Application) routes(mux *http.ServeMux) *http.ServeMux {
 	fileServer := http.FileServer(http.Dir("./ui/static/"))
 	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
 	mux.HandleFunc("/", app.home)
