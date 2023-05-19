@@ -13,8 +13,8 @@ docker-up:
 docker-down:
 	docker-compose down
 
-docker-db:
-	docker-compose up db
+db-up:
+	docker-compose up -d db
 
 docker-rebuild:
 	docker-compose down --volumes && docker-compose up --build
