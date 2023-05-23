@@ -24,7 +24,7 @@ func (app *Application) home(w http.ResponseWriter, r *http.Request) {
 	// 	fmt.Fprintf(w, "%+v\n", snippet)
 	// }
 
-	app.render(w, http.StatusOK, "home.tmpl", &templateData{
+	app.render(w, http.StatusOK, "home.html", &templateData{
 		Snippets: snippets,
 	})
 }
@@ -44,7 +44,7 @@ func (app *Application) snippetView(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	app.render(w, http.StatusOK, "view.tmpl", &templateData{
+	app.render(w, http.StatusOK, "view.html", &templateData{
 		Snippet: snippet,
 	})
 }
