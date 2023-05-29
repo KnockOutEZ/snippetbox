@@ -6,15 +6,11 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/julienschmidt/httprouter"
 	"github.com/nexentra/snippetbox/internal/models"
 )
 
 func (app *Application) home(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/" {
-		app.notFound(w)
-		return
-	}
-
 	snippets, err := app.Snippets.Latest()
 	if err != nil {
 		app.serverError(w, err)
@@ -27,7 +23,8 @@ func (app *Application) home(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *Application) snippetView(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.ParseUint(r.URL.Query().Get("id"), 10, 64)
+	params := httprouter.ParamsFromContext(r.Context())
+	id, err := strconv.ParseUint(params.ByName("id"), 10, 64)
 	if err != nil {
 		app.notFound(w)
 		return
@@ -48,7 +45,12 @@ func (app *Application) snippetView(w http.ResponseWriter, r *http.Request) {
 	
 	app.render(w, http.StatusOK, "view.html", data)
 }
+
 func (app *Application) snippetCreate(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("Display the form for creating a new snippet..."))
+}
+
+func (app *Application) snippetCreatePost(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		w.Header().Set("Allow", http.MethodPost)
 		app.clientError(w, http.StatusMethodNotAllowed)
@@ -65,5 +67,5 @@ func (app *Application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, fmt.Sprintf("/snippet/view?id=%d", id), http.StatusSeeOther)
+	http.Redirect(w, r, fmt.Sprintf("/snippet/view/%d", id),http.StatusSeeOther)
 }
