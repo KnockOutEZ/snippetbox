@@ -8,6 +8,7 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/go-playground/form/v4"
 	_ "github.com/lib/pq"
 	conf "github.com/nexentra/snippetbox/configs"
 	"github.com/nexentra/snippetbox/internal/models"
@@ -74,11 +75,14 @@ func main() {
 		errorLog.Fatal(err)
 	}
 
+	formDecoder := form.NewDecoder()
+
 	app := &Application{
-		ErrorLog: errorLog,
-		InfoLog:  infoLog,
-		Snippets: &models.SnippetModel{DB: db},
+		ErrorLog:      errorLog,
+		InfoLog:       infoLog,
+		Snippets:      &models.SnippetModel{DB: db},
 		TemplateCache: templateCache,
+		FormDecoder:   formDecoder,
 	}
 
 	mux := http.NewServeMux()
