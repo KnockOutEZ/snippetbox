@@ -7,7 +7,11 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"time"
 
+	"github.com/alexedwards/scs/postgresstore"
+	"github.com/alexedwards/scs/v2"
+	"github.com/go-playground/form/v4"
 	_ "github.com/lib/pq"
 	conf "github.com/nexentra/snippetbox/configs"
 	"github.com/nexentra/snippetbox/internal/models"
@@ -74,11 +78,19 @@ func main() {
 		errorLog.Fatal(err)
 	}
 
+	formDecoder := form.NewDecoder()
+
+	sessionManager := scs.New()
+	sessionManager.Store = postgresstore.New(db)
+	sessionManager.Lifetime = 12 * time.Hour
+
 	app := &Application{
-		ErrorLog: errorLog,
-		InfoLog:  infoLog,
-		Snippets: &models.SnippetModel{DB: db},
-		TemplateCache: templateCache,
+		ErrorLog:       errorLog,
+		InfoLog:        infoLog,
+		Snippets:       &models.SnippetModel{DB: db},
+		TemplateCache:  templateCache,
+		FormDecoder:    formDecoder,
+		SessionManager: sessionManager,
 	}
 
 	mux := http.NewServeMux()
